@@ -1,5 +1,7 @@
 **#Employee Database Management App (Oracle + Java JDBC)**
 
+**#Developed by: Tejas Sathe**         
+**#MailId - sathetejas111@gmail.com**        
 
 **#Project Description**
 
