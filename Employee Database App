@@ -1,0 +1,166 @@
+package com.jdbc;
+
+import java.sql.*;
+import java.util.Scanner;
+
+public class EmployeeDatabaseApp {
+    public static void main(String[] args) {
+        // Step 1: Create Scanner object for user input
+        Scanner scanner = new Scanner(System.in);
+
+        // Step 2: Create DBManager object to handle database operations
+        DBManager db = new DBManager();
+
+        // Step 3: Loop to display menu and perform actions
+        while (true) {
+            System.out.println("\n===== Employee Database App =====");
+            System.out.println("1. Add Employee");
+            System.out.println("2. View All Employees");
+            System.out.println("3. Update Employee");
+            System.out.println("4. Delete Employee");
+            System.out.println("5. Exit");
+            System.out.print("Enter your choice: ");
+            int choice = scanner.nextInt();
+
+            // Step 4: Switch-case to handle user choice
+            switch (choice) {
+                case 1:
+                    // Add new employee
+                    System.out.print("Enter name: ");
+                    String name = scanner.next();
+                    System.out.print("Enter age: ");
+                    int age = scanner.nextInt();
+                    db.addEmployee(name, age);
+                    break;
+
+                case 2:
+                    // View all employees
+                    db.viewEmployees();
+                    break;
+
+                case 3:
+                    // Update employee details
+                    System.out.print("Enter employee ID to update: ");
+                    int updateId = scanner.nextInt();
+                    System.out.print("Enter new name: ");
+                    String newName = scanner.next();
+                    System.out.print("Enter new age: ");
+                    int newAge = scanner.nextInt();
+                    db.updateEmployee(updateId, newName, newAge);
+                    break;
+
+                case 4:
+                    // Delete employee by ID
+                    System.out.print("Enter employee ID to delete: ");
+                    int deleteId = scanner.nextInt();
+                    db.deleteEmployee(deleteId);
+                    break;
+
+                case 5:
+                    // Exit application
+                    System.out.println("Exiting...");
+                    db.close(); // Close DB connection
+                    return;
+
+                default:
+                    // Invalid menu input
+                    System.out.println("Invalid choice. Try again.");
+            }
+        }
+    }
+}
+
+class DBManager {
+    private Connection con; // Step 1: Declare a Connection variable
+
+    // Step 2: Constructor to load driver and establish connection
+    DBManager() {
+        try {
+            // Load Oracle JDBC driver
+            Class.forName("oracle.jdbc.driver.OracleDriver");
+
+            // Establish connection to Oracle DB
+            con = DriverManager.getConnection(
+                "jdbc:oracle:thin:@localhost:1522:ORCL", // Correct your port/service name if needed
+                "sathetejas", "tejas"
+            );
+
+            // Step 3: Confirm connection
+            if (con != null) {
+                System.out.println("Connected to the Oracle database.");
+            } else {
+                System.out.println("Connection object is null.");
+            }
+        } catch (Exception e) {
+            System.out.println("Connection failed: " + e);
+        }
+    }
+
+    // Step 4: Method to insert new employee into database
+    public void addEmployee(String name, int age) {
+        String query = "INSERT INTO employee (name, age) VALUES (?, ?)";
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setString(1, name); // Set first placeholder
+            stmt.setInt(2, age);     // Set second placeholder
+            stmt.executeUpdate();    // Execute insert
+            System.out.println("Employee added.");
+        } catch (SQLException e) {
+            System.out.println("Add failed: " + e);
+        }
+    }
+
+    // Step 5: Method to view all employees from database
+    public void viewEmployees() {
+        String query = "SELECT * FROM employee";
+        try (
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery(query)
+        ) {
+            System.out.println("\nID\tName\tAge");
+            while (rs.next()) {
+                System.out.println(
+                    rs.getInt("id") + "\t" +
+                    rs.getString("name") + "\t" +
+                    rs.getInt("age")
+                );
+            }
+        } catch (SQLException e) {
+            System.out.println("View failed: " + e);
+        }
+    }
+
+    // Step 6: Method to update an employee's details
+    public void updateEmployee(int id, String name, int age) {
+        String query = "UPDATE employee SET name=?, age=? WHERE id=?";
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setString(1, name);
+            stmt.setInt(2, age);
+            stmt.setInt(3, id);
+            int rows = stmt.executeUpdate(); // Get affected rows
+            System.out.println(rows > 0 ? "Employee updated." : "Employee not found.");
+        } catch (SQLException e) {
+            System.out.println("Update failed: " + e);
+        }
+    }
+
+    // Step 7: Method to delete an employee
+    public void deleteEmployee(int id) {
+        String query = "DELETE FROM employee WHERE id=?";
+        try (PreparedStatement stmt = con.prepareStatement(query)) {
+            stmt.setInt(1, id);
+            int rows = stmt.executeUpdate();
+            System.out.println(rows > 0 ? "Employee deleted." : "Employee not found.");
+        } catch (SQLException e) {
+            System.out.println("Delete failed: " + e);
+        }
+    }
+
+    // Step 8: Method to close connection
+    public void close() {
+        try {
+            if (con != null) con.close();
+        } catch (SQLException e) {
+            System.out.println("Close failed: " + e);
+        }
+    }
+}
